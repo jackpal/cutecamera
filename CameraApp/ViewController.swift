@@ -27,11 +27,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
   }
 
-  override func didReceiveMemoryWarning() {
-    super.didReceiveMemoryWarning()
-    // Dispose of any resources that can be recreated.
-  }
-
   @IBAction func doCamera(_ sender: UIBarButtonItem) {
     if UIImagePickerController.isSourceTypeAvailable(
       UIImagePickerControllerSourceType.camera) {
@@ -67,6 +62,23 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
   }
 
   @IBAction func doFilter(_ sender: UIBarButtonItem) {
+    doFilterRGB()
+  }
+
+  func doFilterPolaroid() {
+    guard let filter = CIFilter(name: "CIPhotoEffectInstant") else {return}
+    guard let image = imageView.image else {return}
+    guard let inputImage = CIImage(image: image) else {return}
+    filter.setValue(inputImage, forKey: kCIInputImageKey)
+
+    guard let outputImage = filter.outputImage else {return}
+    let context = CIContext()
+    guard let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {return}
+    imageView.image = UIImage(cgImage: cgImage, scale:image.scale,
+                              orientation:image.imageOrientation)
+  }
+
+  func doFilterRGB() {
     guard let image = imageView.image else { return }
     guard let bytes = image.pixelData() else { return }
     var mutableBytes = bytes
@@ -87,9 +99,16 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 
   func filter(width:Int, height:Int, pixels: inout [PixelData]) {
     var index = 0
-    for y in 0..<height {
-      for x in 0..<width {
-        pixels[index].r = 255-pixels[index].r
+    for _ in 0..<height {
+      for _ in 0..<width {
+        var pixel = pixels[index]
+        let brightness:Int = Int(pixel.r) + Int(pixel.g) + Int(pixel.b)
+        if brightness > 160 * 3 {
+          pixel.r = 255
+          pixel.g = pixel.g / 2
+          pixel.b = pixel.b / 2
+          pixels[index] = pixel
+        }
         index += 1
       }
     }

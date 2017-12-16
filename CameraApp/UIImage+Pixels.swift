@@ -46,7 +46,7 @@ extension UIImage {
 
     let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
     let bitmapInfo:CGBitmapInfo =
-      CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
+      CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue)
 
     var data = pixelValues // Copy to mutable []
     guard let providerRef = CGDataProvider(
