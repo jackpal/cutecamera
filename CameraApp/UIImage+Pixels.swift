@@ -35,45 +35,37 @@ extension UIImage {
     return pixelData
   }
 
-  static func image(fromPixelValues pixelValues: [PixelData], width: Int, height: Int) -> UIImage?
-  {
-      var imageRef: CGImage?
-      var pixelValues = pixelValues
-      let bitsPerComponent = 8
-      let bytesPerPixel = 4
-      let bitsPerPixel = bytesPerPixel * bitsPerComponent
-      let bytesPerRow = bytesPerPixel * width
-      let totalBytes = height * bytesPerRow
+  static func image(fromPixelValues pixelValues:[PixelData], width:Int, height:Int,
+                    orientation:UIImageOrientation)->UIImage? {
+    let bitsPerComponent = 8
+    let bitsPerPixel = 32
 
-      imageRef = withUnsafePointer(to: &pixelValues, {
-          ptr -> CGImage? in
-          var imageRef: CGImage?
-          let colorSpaceRef = CGColorSpaceCreateDeviceRGB()
-          let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue).union(CGBitmapInfo())
-          let data = UnsafeRawPointer(ptr.pointee).assumingMemoryBound(to: UInt8.self)
-          let releaseData: CGDataProviderReleaseDataCallback = {
-              (info: UnsafeMutableRawPointer?, data: UnsafeRawPointer, size: Int) -> () in
-          }
-
-          if let providerRef = CGDataProvider(dataInfo: nil, data: data, size: totalBytes, releaseData: releaseData) {
-              imageRef = CGImage(width: width,
-                                 height: height,
-                                 bitsPerComponent: bitsPerComponent,
-                                 bitsPerPixel: bitsPerPixel,
-                                 bytesPerRow: bytesPerRow,
-                                 space: colorSpaceRef,
-                                 bitmapInfo: bitmapInfo,
-                                 provider: providerRef,
-                                 decode: nil,
-                                 shouldInterpolate: false,
-                                 intent: CGColorRenderingIntent.defaultIntent)
-          }
-
-          return imageRef
-      })
-    if (imageRef != nil) {
-      return UIImage(cgImage:imageRef!)
+    if pixelValues.count != width * height {
+      return nil
     }
-    return nil
+
+    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+    let bitmapInfo:CGBitmapInfo =
+      CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
+
+    var data = pixelValues // Copy to mutable []
+    guard let providerRef = CGDataProvider(
+      data: NSData(bytes: &data, length: data.count * MemoryLayout<PixelData>.size)
+      ) else {return nil}
+
+    guard let cgim = CGImage(
+      width: width,
+      height: height,
+      bitsPerComponent: bitsPerComponent,
+      bitsPerPixel: bitsPerPixel,
+      bytesPerRow: width * MemoryLayout<PixelData>.size,
+      space: rgbColorSpace,
+      bitmapInfo: bitmapInfo,
+      provider: providerRef,
+      decode: nil,
+      shouldInterpolate: false,
+      intent: CGColorRenderingIntent.defaultIntent
+      ) else {return nil}
+    return UIImage(cgImage: cgim, scale: 1.0, orientation: orientation)
   }
 }

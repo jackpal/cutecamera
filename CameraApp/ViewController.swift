@@ -74,7 +74,8 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
            height: Int(image.size.height), pixels:&mutableBytes)
     guard let image2 = UIImage.image(fromPixelValues: mutableBytes,
                                      width: Int(image.size.width),
-                                     height: Int(image.size.height)) else {return}
+                                     height: Int(image.size.height),
+                                     orientation:image.imageOrientation) else {return}
     imageView.image = image2
   }
 
